@@ -2,7 +2,7 @@ package cli_simhash
 
 import (
 	"fmt"
-	"kvstore/simhash"
+	"napredni/simhash"
 	"os"
 	"path/filepath"
 	"strings"
