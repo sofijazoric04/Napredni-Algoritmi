@@ -27,3 +27,5 @@ func CreateHashFunctions(k uint) []HashWithSeed {
 	}
 	return h
 }
+
+//test
