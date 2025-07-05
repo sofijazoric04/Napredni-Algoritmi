@@ -24,12 +24,6 @@ func CreateHashFunctions(k uint) []HashWithSeed {
 		binary.BigEndian.PutUint32(seed, uint32(ts+i))
 		hfn := HashWithSeed{Seed: seed}
 		h[i] = hfn
-		for i := uint32(0); i < k; i++ {
-			seed := make([]byte, 4)
-			binary.BigEndian.PutUint32(seed, i)
-			h[i] = HashWithSeed{Seed: seed}
-		}
-		return h
 	}
 	return h
 }
