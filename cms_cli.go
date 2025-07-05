@@ -2,7 +2,7 @@ package cli_cmsketch
 
 import (
 	"fmt"
-	"kvstore/cms"
+	"napredni/cms"
 	"os"
 	"path/filepath"
 	"strconv"
