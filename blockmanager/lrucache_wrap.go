@@ -2,7 +2,7 @@ package blockmanager
 
 import (
 	"fmt"
-	"kvstore/cache"
+	"napredni/cache"
 )
 
 // BlockCache je adapter LRU
