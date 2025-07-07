@@ -1,0 +1,12 @@
+{
+    "memtable_type": "hashmap",
+    "memtable_max_entries": 3,
+    "memtable_max_tables": 4,
+    "wal_segment_size": 3,
+    "max_sstable_files": 2,
+    "max_levels": 5,
+    "sstable_files_per_level": 2,
+    "block_size_kb": 4,
+    "cache_capacity": 128
+  }
+  
