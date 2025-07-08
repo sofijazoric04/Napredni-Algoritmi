@@ -11,7 +11,7 @@ import (
 
 const basePath = "data/probabilistic"
 
-func Handle(input string) {
+func Handle(input string) { //Proveravamo input i izvrsavamo odgovarajucu komandu
 	args := strings.Fields(input)
 	if len(args) < 2 {
 		fmt.Println("Neispravna komanda")
@@ -23,7 +23,7 @@ func Handle(input string) {
 	filePath := filepath.Join(basePath, "bf_"+name+".bloom")
 
 	switch cmd {
-	case "BF_NEW":
+	case "BF_NEW": // Kreiranje novog Bloom filtera
 		if len(args) != 4 {
 			fmt.Println("Koriscenje: BF_NEW naziv brojElem stopaGreske")
 			return
@@ -42,7 +42,7 @@ func Handle(input string) {
 			fmt.Println("Bloom filter", name, "je kreiran")
 		}
 
-	case "BF_ADD":
+	case "BF_ADD": // Dodavanje elementa u Bloom filter
 		if len(args) != 3 {
 			fmt.Println("Koriscenje: BF_ADD naziv kljuc")
 			return
@@ -63,7 +63,6 @@ func Handle(input string) {
 			return
 		}
 
-		// 🚨 Dodajemo proveru odmah nakon snimanja
 		bf2, err := bloomfilter.LoadFromFile(filePath)
 		if err != nil {
 			fmt.Println(" Greška pri re-učitavanju:", err)
@@ -71,7 +70,7 @@ func Handle(input string) {
 		}
 		fmt.Println("🧪 Posle ponovnog učitavanja:", countTrueBits(bf2.Bitset))
 
-	case "BF_QUERY":
+	case "BF_QUERY": // Provera da li element postoji u Bloom filteru
 		if len(args) != 3 {
 			fmt.Println("Koriscenje: BF_QUERY naziv kljuc")
 			return
@@ -88,7 +87,7 @@ func Handle(input string) {
 			fmt.Println("Sigurno ne postoji:", args[2])
 		}
 
-	case "BF_DELETE":
+	case "BF_DELETE": // Brisanje Bloom filtera
 		err := os.Remove(filePath)
 		if err != nil {
 			fmt.Println("Greska pri brisanju:", err)
@@ -103,6 +102,7 @@ func Handle(input string) {
 
 }
 
+// countTrueBits broji koliko je bitova postavljeno na true u Bloom filteru
 func countTrueBits(bits []bool) int {
 	count := 0
 	for _, b := range bits {
