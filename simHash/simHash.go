@@ -1,94 +1,68 @@
-package main
+package simhash
 
 import (
-	"bufio"
-	"fmt"
-	"hash/fnv"
+	"crypto/md5"
+	"encoding/binary"
+	"errors"
+	"io/ioutil"
+	"math/bits"
 	"os"
 	"strings"
 )
 
-func main() {
-	text := newText() //ucitavanje novog teksta
-	hashedWords, counts := splitAndHash(text)
-	sum1 := getSum(hashedWords, counts)
-	fmt.Print(sum1)
-
-	fmt.Print("\nDruga tura\n")
-
-	text2 := newText() //ucitavanje novog teksta
-	hashedWords, counts = splitAndHash(text2)
-	sum2 := getSum(hashedWords, counts)
-	fmt.Print(sum2)
-
-	fmt.Print("\nHamming distance")
-	fmt.Print(hammingDistance(sum1, sum2))
-
+type SimHash struct {
+	Hash uint64
 }
 
-func newText() string {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter some text: ")
-	text, err := reader.ReadString('\n')
-	if err != nil {
-		fmt.Println("Došlo je do greške pri čitanju:", err)
-		return ""
-	}
+func NewSimHashFromText(text string) SimHash {
+	words := strings.Fields(text)
+	vector := make([]int, 64)
 
-	return text
-}
+	for _, word := range words {
+		hash := md5.Sum([]byte(word))
+		val := binary.BigEndian.Uint64(hash[:8])
 
-func splitAndHash(text string) ([]string, map[string]int) {
-	splitText := strings.Fields(text)
-	hashedWords := make([]string, 0)
-	counts := make(map[string]int)
-	j := 0
-	for i := 0; i < len(splitText); i++ {
-		word := hashWord(splitText[i])
-		counts[word]++
-		if counts[word] == 1 {
-			hashedWords = append(hashedWords, word)
-			fmt.Println(word)
-			j++
-		}
-	} //for petlja za hashovanje svake pojedinacne reci
-	return hashedWords, counts
-}
-
-func hashWord(s string) string {
-	h := fnv.New32a()
-	h.Write([]byte(s))
-	binaryHash := fmt.Sprintf("%032b", h.Sum32())
-	return binaryHash
-}
-
-func getSum(hashedWords []string, counts map[string]int) string {
-	value := make([]int, 32)
-	for j := 0; j < 32; j++ {
-		for _, word := range hashedWords {
-			if string(word[j]) == "0" {
-				value[j] -= counts[word]
+		for i := 0; i < 64; i++ {
+			if (val>>i)&1 == 1 {
+				vector[i]++
 			} else {
-				value[j] += counts[word]
+				vector[i]--
 			}
 		}
-		if value[j] > 0 {
-			value[j] = 1
-		} else {
-			value[j] = 0
+	}
+
+	var final uint64 = 0
+	for i := 0; i < 64; i++ {
+		if vector[i] > 0 {
+			final |= (1 << i)
 		}
 	}
 
-	return fmt.Sprint(value)
+	return SimHash{Hash: final}
 }
 
-func hammingDistance(s1 string, s2 string) string {
-	result := make([]byte, 32)
-	for i := 0; i < 32; i++ {
-		result[i] = s1[i] ^ s2[i]
+func HammingDistance(a, b SimHash) int {
+	return bits.OnesCount64(a.Hash ^ b.Hash)
+}
+
+func (s SimHash) SaveToFile(path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
 	}
+	defer file.Close()
 
-	return fmt.Sprint(result)
+	return binary.Write(file, binary.LittleEndian, s.Hash)
 }
 
-//da li svejedno mnozimo li bitove sa brojem ponavljanja ili ih samo prolazimo ponovo
+func LoadFromFile(path string) (SimHash, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return SimHash{}, err
+	}
+	if len(data) != 8 {
+		return SimHash{}, errors.New("neispravan format fajla")
+	}
+	hash := binary.LittleEndian.Uint64(data)
+	return SimHash{Hash: hash}, nil
+}
