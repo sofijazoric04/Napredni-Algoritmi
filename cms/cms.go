@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-// CMS predstavlja Count-Min Sketch strukturu
+// CMS je Count-Min Sketch struktura
 type CMS struct {
 	Matrix    [][]uint32     // k redova, m kolona
 	Depth     uint           // broj hash funkcija (k)
@@ -16,7 +16,7 @@ type CMS struct {
 	HashFuncs []HashWithSeed // hash funkcija sa 32-bajt seed-ovima
 }
 
-// NewCMS kreira novi CMS na osnovu zeljene greske i verovatnoce
+// NewCMS pravi novi CMS na osnovu greske i verovatnoce koju zelimo
 func NewCMS(epsilon, delta float64) *CMS {
 	width := CalculateM(epsilon)
 	depth := CalculateK(delta)
@@ -36,7 +36,7 @@ func NewCMS(epsilon, delta float64) *CMS {
 	}
 }
 
-// Add povecava brojanje za dati kljuc
+// Add povecava brojac za dati kljuc
 func (cms *CMS) Add(key string) {
 	data := []byte(key)
 
@@ -60,6 +60,7 @@ func (cms *CMS) Estimate(key string) uint32 {
 	return min
 }
 
+
 // SaveToFile binarno snima CMS u fajl
 func (cms *CMS) SaveToFile(path string) error {
 	file, err := os.Create(path)
@@ -67,6 +68,7 @@ func (cms *CMS) SaveToFile(path string) error {
 		return err
 	}
 	defer file.Close()
+
 
 	// Snimi dimenzije
 	if err := binary.Write(file, binary.LittleEndian, uint32(cms.Depth)); err != nil {
