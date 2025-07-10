@@ -12,9 +12,10 @@ type Entry struct {
 
 // Glavna struktura za Memtable
 type HashMapMemtable struct {
-	data map[string]Entry // mapa: kljuc -> Entry
-	mu   sync.RWMutex     // bezbedan rad sa vise niti
-	Cap  int              // kapacitet
+	data        map[string]Entry // mapa: kljuc -> Entry
+	mu          sync.RWMutex     // bezbedan rad sa vise niti
+	Cap         int              // kapacitet
+	segmentPath string
 }
 
 // Konstruktor: pravi novu praznu memtable sa zadatim kapacitetom
@@ -71,4 +72,26 @@ func (m *HashMapMemtable) Delete(key string) {
 	m.data[key] = Entry{
 		Tombstone: true,
 	}
+}
+
+func (m *HashMapMemtable) SetSegmentPath(path string) {
+	m.segmentPath = path
+}
+
+func (m *HashMapMemtable) GetSegmentPath() string {
+	return m.segmentPath
+}
+
+// vraca broj zapisa u tabeli
+func (m *HashMapMemtable) Size() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.data)
+}
+
+// obicna provera da li je popunjen kapacitet
+func (m *HashMapMemtable) IsFull() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.data) >= m.Cap
 }
