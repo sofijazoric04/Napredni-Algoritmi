@@ -1,7 +1,13 @@
 package memtable
 
 import (
+	"fmt"
+	"napredni/blockmanager"
+	"napredni/sstable"
+	"os"
+	"sort"
 	"sync"
+	"time"
 )
 
 // Jedan zapis koji se cuva u Memtable
@@ -94,4 +100,55 @@ func (m *HashMapMemtable) IsFull() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return len(m.data) >= m.Cap
+}
+
+// pretvara trenutni sadrzaj Memtable u slice i zapisuje na disk
+func (m *HashMapMemtable) FlushToSSTable(dirPath string, bm *blockmanager.BlockManager) error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("ne mogu da napravim SSTable folder: %v", err)
+	}
+
+	var entries []sstable.Entry
+
+	for key, val := range m.data {
+		entries = append(entries, sstable.Entry{
+			Key:       key,
+			Value:     val.Value,
+			Tombstone: val.Tombstone,
+			Timestamp: uint64(time.Now().UnixNano()),
+		})
+	}
+
+	err = sstable.WriteAllFilesWithBlocks(dirPath, entries, bm)
+	fmt.Printf("Flush Memtable to SSTable: %s\n", dirPath)
+	for _, entry := range entries {
+		fmt.Printf("Flush: %s → %s\n", entry.Key, entry.Value)
+	}
+	return err
+}
+
+func (h *HashMapMemtable) RangeScan(from, to string) map[string][]byte {
+	var allKeys []string // slice stringova u koji ubacujemo kljuceve
+	for k := range h.data {
+		allKeys = append(allKeys, k)
+	}
+
+	sort.Strings(allKeys)
+
+	// na osnovu kljuca i poredjenja sa from to po potrebi i zadovoljenju uslova dodajemo u results
+	results := make(map[string][]byte)
+	for _, k := range allKeys {
+		if k >= from && k <= to {
+			entry := h.data[k]
+			if !entry.Tombstone {
+				results[k] = entry.Value
+			}
+		}
+	}
+
+	return results
 }
