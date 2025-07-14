@@ -2,8 +2,8 @@ package memtable
 
 import (
 	"fmt"
-	"kvstore/blockmanager"
-	"kvstore/sstable"
+	"napredni/blockmanager"
+	"napredni/sstable"
 	"math/rand"
 	"os"
 	"time"
