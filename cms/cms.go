@@ -70,7 +70,7 @@ func (cms *CMS) SaveToFile(path string) error {
 	defer file.Close()
 
 
-	// Snimi dimenzije
+	// Snima dimenzije
 	if err := binary.Write(file, binary.LittleEndian, uint32(cms.Depth)); err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (cms *CMS) SaveToFile(path string) error {
 		return err
 	}
 
-	// Snimi sve hash seedove (32 bajta svaki)
+	// Snima sve hash seedove (32 bajta svaki)
 	for _, hf := range cms.HashFuncs {
 		if len(hf.Seed) != 32 {
 			return fmt.Errorf("seed nije 32 bajta")
@@ -88,7 +88,7 @@ func (cms *CMS) SaveToFile(path string) error {
 		}
 	}
 
-	// Snimi celu matricu
+	// Snima celu matricu
 	for i := uint(0); i < cms.Depth; i++ {
 		for j := uint(0); j < cms.Width; j++ {
 			if err := binary.Write(file, binary.LittleEndian, cms.Matrix[i][j]); err != nil {
@@ -119,7 +119,7 @@ func LoadFromFile(path string) (*CMS, error) {
 	depth := uint(depth32)
 	width := uint(width32)
 
-	// Učitaj hash funkcije (32 bajta po seedu)
+	// Učitavanje hash funkcije (32 bajta po seedu)
 	hashFuncs := make([]HashWithSeed, depth)
 	for i := uint(0); i < depth; i++ {
 		seed := make([]byte, 32)
@@ -129,7 +129,7 @@ func LoadFromFile(path string) (*CMS, error) {
 		hashFuncs[i] = HashWithSeed{Seed: seed}
 	}
 
-	// Učitaj matricu
+	// Učitavanje matrice
 	matrix := make([][]uint32, depth)
 	for i := range matrix {
 		matrix[i] = make([]uint32, width)
