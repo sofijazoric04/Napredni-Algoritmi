@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"sort"
+
 )
 
 // Engine predstavlja celu "bazicu" - cuva sve potrebne delove sistema
@@ -29,6 +31,102 @@ type Engine struct {
 	BlockManager      *blockmanager.BlockManager // block manager, za block cache
 	walSegmentCounter int
 }
+
+// PrefixIterator je iterator za kljuceve koji pocinju na dati prefix
+type PrefixIterator struct {
+	keys   []string
+	values [][]byte
+	index  int // trenutna pozicija u listi
+}
+
+type RangeIterator struct {
+	keys   []string          // Lista ključeva sortirana
+	values map[string][]byte // Mapa: ključ -> vrednost
+	pos    int               // Trenutna pozicija iteratora
+}
+// NewPrefixIterator u sustini samo pravi novi PrefixIterator za zadati prefix
+func (e *Engine) NewPrefixIterator(prefix string) *PrefixIterator {
+	results := e.PrefixScanAll(prefix)
+
+	// sortira kljuceve
+	var keys []string
+	for k := range results {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// pravi niz vrednost u istom redosledu kao kljucevi
+	var values [][]byte
+	for _, k := range keys {
+		values = append(values, results[k])
+	}
+
+	return &PrefixIterator{
+		keys:   keys,
+		values: values,
+		index:  0,
+	}
+
+}
+
+// Next vraca sledeci (key, value) par ili "" i nil ako nema vise
+func (it *PrefixIterator) Next() (string, []byte) {
+	if it.index >= len(it.keys) {
+		return "", nil
+	}
+
+	key := it.keys[it.index]
+	value := it.values[it.index]
+	it.index++
+	return key, value
+
+}
+
+// Stop resetuje iterator
+func (it *PrefixIterator) Stop() {
+	it.keys = nil
+	it.values = nil
+	it.index = 0
+
+}
+
+// NewRangeIterator pravi novi RangeIterator za dati opseg ključeva
+func (e *Engine) NewRangeIterator(from, to string) *RangeIterator {
+	all := e.RangeScan(from, to)
+	keys := make([]string, 0, len(all))
+
+	for k := range all {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return &RangeIterator{
+		keys:   keys,
+		values: all,
+		pos:    0,
+	}
+
+}
+
+// Next vraca sledeci (key, value) par ili "" i nil ako nema vise
+func (it *RangeIterator) Next() (string, []byte, bool) {
+	if it.pos >= len(it.keys) {
+		return "", nil, false
+	}
+	key := it.keys[it.pos]
+	val := it.values[key]
+	it.pos++
+	return key, val, true
+}
+
+// Stop resetuje iterator
+func (it *RangeIterator) Stop() {
+	it.keys = nil
+	it.values = nil
+	it.pos = 0
+}
+
 
 // NewEngine pravi novi Engine sa prosledjenim podacima
 func NewEngine(memCap int, walDir string, sstableDir string) *Engine {
