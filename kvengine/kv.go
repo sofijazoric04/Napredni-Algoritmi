@@ -440,3 +440,190 @@ func (e *Engine) Delete(key string) error {
 
 	return nil
 }
+
+func (e *Engine) GetMemtable() memtable.MemtableInterface {
+	return e.Memtables[0]
+}
+
+func (e *Engine) FlushAllMemtables() {
+	fmt.Println(" Izvrsavam Flush svih Memtable-ova pri EXIT...")
+
+	// preskacemo RW memtable jer nije read-only jos
+	for i := 1; i < len(e.Memtables); i++ {
+		toFlush := e.Memtables[i]
+		segmentPath := toFlush.GetSegmentPath()
+
+		// napravi sstable direktorijum
+		timestamp := time.Now().UnixNano()
+		sstablePath := filepath.Join("data", "sstables", fmt.Sprintf("sstable_L0_%d", timestamp))
+
+		// flush memtable na disk
+		fmt.Printf("Flushing RO memtable u sstable: %s\n", sstablePath)
+
+		err := toFlush.FlushToSSTable(sstablePath, e.BlockManager)
+		if err != nil {
+			fmt.Printf("greska pri flushovanju memtable: %v\n", err)
+			continue
+		}
+
+		// obrisi odgovarajuci WAL segment
+		if segmentPath != "" {
+			fmt.Printf("brisem pripadajuci WAL segment: %s\n", segmentPath)
+			err := os.Remove(segmentPath)
+			if err != nil {
+				fmt.Printf("greska pri brisanju  WAL segmenta: %v\n", err)
+			}
+		}
+	}
+
+	// ocistimo sve osim RW memtable
+	if len(e.Memtables) > 1 {
+		e.Memtables = e.Memtables[:1]
+	}
+
+}
+
+func (e *Engine) RangeScan(from, to string) map[string][]byte {
+	result := make(map[string][]byte)
+
+	// 1. Prolaz kroz sve Memtables
+	for _, mt := range e.Memtables {
+		memData := mt.RangeScan(from, to)
+		for k, v := range memData {
+			result[k] = v
+		}
+	}
+
+	// 2. Prolaz kroz SSTables
+	files, err := os.ReadDir(e.DataPath)
+	if err != nil {
+		return result
+	}
+
+	for _, f := range files {
+		if f.IsDir() && strings.HasPrefix(f.Name(), "sstable_") {
+			metaPath := filepath.Join(e.DataPath, f.Name(), "meta")
+			count, err := sstable.LoadMeta(metaPath)
+			if err != nil {
+				continue
+			}
+
+			dataPath := filepath.Join(e.DataPath, f.Name(), "data")
+			entries, err := sstable.ReadDataFileWithBlocks(dataPath, int(count), e.BlockManager)
+			if err != nil {
+				continue
+			}
+
+			for _, entry := range entries {
+				if entry.Key >= from && entry.Key <= to && !entry.Tombstone {
+					if _, exists := result[entry.Key]; !exists {
+						result[entry.Key] = entry.Value
+					}
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func (e *Engine) RangeScanPaginated(from, to string, pageNum, pageSize int) map[string]string {
+	all := e.RangeScan(from, to)
+
+	keys := make([]string, 0, len(all))
+	for k := range all {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	start := pageNum * pageSize
+	if start >= len(keys) {
+		return map[string]string{}
+	}
+
+	end := start + pageSize
+	if end > len(keys) {
+		end = len(keys)
+	}
+
+	paged := make(map[string]string)
+	for _, k := range keys[start:end] {
+		paged[k] = string(all[k])
+	}
+
+	return paged
+}
+
+func (e *Engine) PrefixScanAll(prefix string) map[string][]byte {
+	result := make(map[string][]byte)
+
+	// 1. Prolaz kroz sve Memtables
+	for _, mt := range e.Memtables {
+		memData := mt.RangeScan(prefix, prefix+"~")
+		for k, v := range memData {
+			if strings.HasPrefix(k, prefix) {
+				result[k] = v
+			}
+		}
+	}
+
+	// 2. Prolaz kroz SSTables
+	files, err := os.ReadDir(e.DataPath)
+	if err != nil {
+		return result
+	}
+
+	for _, f := range files {
+		if f.IsDir() && strings.HasPrefix(f.Name(), "sstable_") {
+			metaPath := filepath.Join(e.DataPath, f.Name(), "meta")
+			count, err := sstable.LoadMeta(metaPath)
+			if err != nil {
+				continue
+			}
+
+			dataPath := filepath.Join(e.DataPath, f.Name(), "data")
+			entries, err := sstable.ReadDataFileWithBlocks(dataPath, int(count), e.BlockManager)
+			if err != nil {
+				continue
+			}
+
+			for _, entry := range entries {
+				if strings.HasPrefix(entry.Key, prefix) && !entry.Tombstone {
+					if _, exists := result[entry.Key]; !exists {
+						result[entry.Key] = entry.Value
+					}
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func (e *Engine) PrefixScanPagination(prefix string, pageNum, pageSize int) map[string]string {
+	all := e.PrefixScanAll(prefix)
+
+	keys := make([]string, 0, len(all))
+	for k := range all {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	start := pageNum * pageSize
+	if start >= len(keys) {
+		return map[string]string{}
+	}
+
+	end := start + pageSize
+	if end > len(keys) {
+		end = len(keys)
+	}
+
+	paged := make(map[string]string)
+	for _, k := range keys[start:end] {
+		paged[k] = string(all[k])
+	}
+
+	return paged
+}
+
