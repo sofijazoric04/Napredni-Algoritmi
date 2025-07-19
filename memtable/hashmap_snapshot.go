@@ -11,13 +11,6 @@ import (
 // Medjutim ako pre exit-a iz baze mi uradimo SNAPSHOT_SAVE cuvamo njeno stanje, pri novom ulasku u bazu pozovemo SNAPSHOT_LOAD i dobijamo podatke, nema ReplayWAL-a
 // Isto kod skiplist_snapshot.go
 
-// SnapshotEntry je pomocna struktura za serijalizaciju jedne stavke
-type SnapshotEntry struct {
-	Key       string
-	Value     []byte
-	Tombstone bool
-}
-
 // SaveSnapshot snima stanje cele Memtable mape u fajl
 func (m *HashMapMemtable) SaveSnapshot(path string) error {
 	file, err := os.Create(path)
