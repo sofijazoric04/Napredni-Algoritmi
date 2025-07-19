@@ -306,37 +306,6 @@ func LoadAllSegments(bm *blockmanager.BlockManager, dirPath string, recordsPerSe
 	return records, nil
 }
 
-/*func ReplayWAL(bm *blockmanager.BlockManager, walDir string, mt memtable.MemtableInterface, recordsPerSegment int) error {
-	files, err := os.ReadDir(walDir)
-	if err != nil {
-		return fmt.Errorf("ne mogu da procitam WAL direktorijum: %v", err)
-	}
-
-	for _, f := range files {
-		if !strings.HasSuffix(f.Name(), ".log") {
-			continue
-		}
-
-		path := filepath.Join(walDir, f.Name())
-
-		// Ovde citamo preko BlockManager-a
-		records, err := ReadAllRecords(bm, path, recordsPerSegment)
-		if err != nil {
-			return fmt.Errorf("ne mogu da procitam WAL zapis iz %s: %v", path, err)
-		}
-
-		for _, rec := range records {
-			if rec.Tombstone {
-				mt.Delete(string(rec.Key))
-			} else {
-				mt.Put(string(rec.Key), rec.Value)
-			}
-		}
-	}
-
-	return nil
-}*/
-
 // Funkcija koja se poziva sa namerom da se iskoristi ono za sta je WAL i napravljen
 // Dakle ako bismo uradili par PUT operacija i nestane nam struje, ili mi samo uradimo EXIT da ugasimo bazu, a prethodno nismo sacuvali stanje ili nije izazvana flush ili nismo uradili SNAPSHOT, po pokretanju baze ponovo sve iz wal-a se ucitava u Memtable strukturu
 func ReplayWAL(bm *blockmanager.BlockManager, walDir string, mt memtable.MemtableInterface) error {
