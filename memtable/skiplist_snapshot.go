@@ -6,13 +6,6 @@ import (
 	"os"
 )
 
-// SnapshotEntry reprezentuje jedan unos u snapshotu skip liste
-type SnapshotEntry struct {
-	Key       string
-	Value     interface{}
-	Tombstone bool
-}
-
 // SaveSnapshot za SkipListMemtable
 func (s *SkipListMemtable) SaveSnapshot(path string) error {
 	file, err := os.Create(path)
@@ -63,11 +56,7 @@ func (s *SkipListMemtable) LoadSnapshot(path string) error {
 	s.size = 0
 
 	for _, e := range entries {
-		valueBytes, ok := e.Value.([]byte)
-		if !ok {
-			return fmt.Errorf("ne mogu da konvertujem vrednost za ključ '%s' u []byte", e.Key)
-		}
-		s.Put(e.Key, valueBytes)
+		s.Put(e.Key, e.Value)
 		if e.Tombstone {
 			s.Delete(e.Key)
 		}
