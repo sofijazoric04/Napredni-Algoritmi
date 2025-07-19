@@ -188,36 +188,6 @@ func (s *SkipListMemtable) Get(key string) ([]byte, bool) {
 }
 
 func (s *SkipListMemtable) Delete(key string) {
-	/*update := make([]*SkipListNode, s.maxLevel)
-	current := s.head
-
-	// 1. Trazimo sve cvorove koje treba azurirati
-	for i := s.level - 1; i >= 0; i-- {
-		for current.next[i] != nil && current.next[i].key < key {
-			current = current.next[i]
-		}
-		update[i] = current
-	}
-
-	// 2. Pozicioniramo se na potencijalni cvor za brisanje
-	current = current.next[0]
-
-	// 3. Ako postoji brisemo ga na svakom nivou
-	if current != nil && current.key == key {
-		for i := 0; i < s.level; i++ {
-			if update[i].next[i] != current {
-				break
-			}
-			update[i].next[i] = current.next[i]
-		}
-		s.size--
-
-		// 4. Smanjujemo nivo ako su najvisi slojevi prazni
-		for s.level > 1 && s.head.next[s.level-1] == nil {
-			s.level--
-		}
-	}*/
-
 	current := s.head
 	for i := s.level - 1; i >= 0; i-- {
 		for current.next[i] != nil && current.next[i].key < key {
