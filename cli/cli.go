@@ -315,7 +315,7 @@ func Start(engine *kvengine.Engine) {
 			fmt.Println("Prefiks iterator zaustavljen")
 
 		case "MERGE":
-			fmt.Println("🛠 Pokrećem kompaktiranje SSTable-ova...")
+			fmt.Println(" Pokrećem kompaktiranje SSTable-ova...")
 
 			err := sstable.CompactSSTables(engine.DataPath, engine.BlockManager)
 			if err != nil {
