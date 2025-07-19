@@ -53,9 +53,9 @@ func Handle(input string) { //Proveravamo input i izvrsavamo odgovarajucu komand
 			fmt.Println("Greska pri ucitavanju:", err)
 			return
 		}
-		fmt.Println("🧪 Pre dodavanja: aktivnih bitova =", countTrueBits(bf.Bitset))
+		fmt.Println(" Pre dodavanja: aktivnih bitova =", countTrueBits(bf.Bitset))
 		bf.Add(args[2])
-		fmt.Println("🧪 Posle dodavanja:", countTrueBits(bf.Bitset))
+		fmt.Println(" Posle dodavanja:", countTrueBits(bf.Bitset))
 
 		err = bf.SaveToFile(filePath)
 		if err != nil {
@@ -68,7 +68,7 @@ func Handle(input string) { //Proveravamo input i izvrsavamo odgovarajucu komand
 			fmt.Println(" Greška pri re-učitavanju:", err)
 			return
 		}
-		fmt.Println("🧪 Posle ponovnog učitavanja:", countTrueBits(bf2.Bitset))
+		fmt.Println(" Posle ponovnog učitavanja:", countTrueBits(bf2.Bitset))
 
 	case "BF_QUERY": // Provera da li element postoji u Bloom filteru
 		if len(args) != 3 {
