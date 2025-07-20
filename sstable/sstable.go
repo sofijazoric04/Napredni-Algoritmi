@@ -665,7 +665,7 @@ func WriteAllFilesWithBlocks(dirPath string, entries []Entry, bm *blockmanager.B
 	}
 
 	summaryPath := filepath.Join(dirPath, "summary")
-	err = WriteSummaryFileWithBlocks(indexPath, summaryPath, 10, bm)
+	err = WriteSummaryFileWithBlocks(indexPath, summaryPath, config.Current.SummaryKeyDistance, bm)
 	if err != nil {
 		return fmt.Errorf("ne mogu da upisem summary fajl: %v", err)
 	}
