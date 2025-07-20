@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"napredni/cli_bloomfilter"
 	"napredni/cli_cmsketch"
-	"napredni/cli_hll"
 	"napredni/cli_simhash"
 	"napredni/config"
 	"napredni/kvengine"
@@ -47,12 +46,6 @@ func Start(engine *kvengine.Engine) {
 		// Isto za CMS
 		if strings.HasPrefix(strings.ToUpper(args[0]), "CMS_") {
 			cli_cmsketch.Handle(input)
-			continue
-		}
-
-		// HLL
-		if strings.HasPrefix(strings.ToUpper(args[0]), "HLL_") {
-			cli_hll.Handle(input)
 			continue
 		}
 
