@@ -7,6 +7,7 @@
     "max_levels": 5,
     "sstable_files_per_level": 2,
     "block_size_kb": 4,
-    "cache_capacity": 128
+    "cache_capacity": 128,
+    "summary_key_distance": 10
   }
   
