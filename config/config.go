@@ -17,6 +17,7 @@ type Config struct {
 	SSTableFilesPerLevel int    `json:"sstable_files_per_level"`
 	BlockSizeKBK         int    `json:"block_size_kb"`
 	CacheCapacity        int    `json:"cache_capacity"`
+	SummaryKeyDistance   int    `json:"summary_key_distance"`
 }
 
 // Globalna promenljiva u koju ucitavamo konfiguraciju
