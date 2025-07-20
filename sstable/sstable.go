@@ -424,7 +424,7 @@ func WriteSummaryFileWithBlocks(indexPath string, summaryPath string, samplingRa
 		keySize := binary.LittleEndian.Uint64(data[:8])
 
 		if keySize > uint64(len(data)-16) {
-			fmt.Printf("⚠️ Nevalidan keySize: %d u bloku %d (preskačem)\n", keySize, blockNum)
+			fmt.Printf(" Nevalidan keySize: %d u bloku %d (preskačem)\n", keySize, blockNum)
 			blockNum++
 			continue
 		}
