@@ -164,7 +164,7 @@ func Start(engine *kvengine.Engine) {
 		case "RANGE_ALL":
 			results := engine.RangeScan("", "zzzzzz")
 			if len(results) == 0 {
-				fmt.Println("Memtable je trnutno prazna")
+				fmt.Println("Memtable je trenutno prazna")
 			} else {
 				fmt.Println("Svi zapisi u bazi:")
 				var keys []string
@@ -273,7 +273,7 @@ func Start(engine *kvengine.Engine) {
 				case "NEXT":
 					k, v, ok := it.Next()
 					if !ok {
-						fmt.Println("nema vise lemenata")
+						fmt.Println("nema vise elemenata")
 					} else {
 						fmt.Printf(" %s - %s\n", k, string(v))
 					}
@@ -405,6 +405,12 @@ func Start(engine *kvengine.Engine) {
 			fmt.Println("MERGE                - kompaktiranje SSTable")
 			fmt.Println("SNAPSHOT_SAVE ime    - 'zamrzavanje' trenutne baze, cuvanje vrednosti")
 			fmt.Println("SNAPSHOT_LOAD ime    - ucitava prethodno sacuvani snapshot sa informacijama")
+			fmt.Println("MERKLE_VALIDATE ime  - validacija Merkle stabla za dati SSTable folder")
+			fmt.Println("STATS                - statistika baze")
+			fmt.Println("WAL_STATE            - stanje WAL zapisa")
+			fmt.Println("MEMTABLE_STATE       - stanje memtable-a")
+			fmt.Println("SHOW_CONFIG          - prikaz trenutne konfiguracije baze")
+			fmt.Println("SET_RATE_LIMIT maxTokens refillMs - postavljanje rate limiter-a")
 			fmt.Println("HELP                 - pomoć")
 			fmt.Println("EXIT                 - izlaz")
 
