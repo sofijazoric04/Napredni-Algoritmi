@@ -46,7 +46,6 @@ func (e byKey) Less(i, j int) bool {
 }
 
 // data fajl je jedini fajl sstable-a koji pisemo preko blokova
-
 func WriteDataFileWithBlocks(entries []Entry, path string, bm *blockmanager.BlockManager) error {
 	sort.Sort(byKey(entries))
 
@@ -185,6 +184,7 @@ func FindKeyInIndexWithBlocks(bm *blockmanager.BlockManager, indexPath string, t
 	return -1, false
 }
 
+// cita zapis na datom offsetu u data fajlu
 func ReadDataEntryAtOffset(file *os.File, offset int64) (Entry, error) {
 	_, err := file.Seek(offset, io.SeekCurrent)
 	if err != nil {
@@ -223,6 +223,7 @@ func ReadDataEntryAtOffset(file *os.File, offset int64) (Entry, error) {
 
 }
 
+// FastGetFromSSTablesWithBlocks se koristi za brzu pretragu u sstable direktorijumu koristeci blokove
 func FastGetFromSSTablesWithBlocks(baseDir string, targetKey string, bm *blockmanager.BlockManager) ([]byte, bool) {
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
@@ -273,7 +274,9 @@ func FastGetFromSSTablesWithBlocks(baseDir string, targetKey string, bm *blockma
 
 	return nil, false
 }
-
+// pronalazi kljuc u index fajlu od startOffset
+// vraća offset i true ako je pronađen, inače -1 i false
+// radi sekvencijalno, direktno čitajući index fajl
 func FindKeyInIndexFrom(indexPath string, targetKey string, startOffset int64) (int64, bool) {
 	file, err := os.Open(indexPath)
 	if err != nil {
@@ -318,6 +321,9 @@ func FindKeyInIndexFrom(indexPath string, targetKey string, startOffset int64) (
 	return -1, false
 }
 
+// pronalazi kljuc u index fajlu od startBlockNum
+// vraća offset i true ako je pronađen, inače -1 i false
+// koristi BlockManager za čitanje
 func FindKeyInIndexFromWithBlocks(bm *blockmanager.BlockManager, indexPath string, targetKey string, startBlockNum int64) (int64, bool) {
 	blockNum := startBlockNum
 
@@ -348,6 +354,9 @@ func FindKeyInIndexFromWithBlocks(bm *blockmanager.BlockManager, indexPath strin
 
 }
 
+// WriteSummaryFile pravi summary fajl koji sadrzi KEYSIZE|KEY|OFFSET
+// koristi se za brzi pristup kljucevima u index fajlu,
+// sekvencijalno cita index fajl
 func WriteSummaryFile(indexPath string, summaryPath string, samplingRate int) error {
 	indexFile, err := os.Open(indexPath)
 	if err != nil {
@@ -403,6 +412,8 @@ func WriteSummaryFile(indexPath string, summaryPath string, samplingRate int) er
 	return nil
 }
 
+// slična funkcija kao WriteSummaryFile po nameni, ali koristi BlockManager za čitanje index fajla,
+// kao i za pisanje summary fajla
 func WriteSummaryFileWithBlocks(indexPath string, summaryPath string, samplingRate int, bm *blockmanager.BlockManager) error {
 	tmp := make([]byte, 8)
 	blockNum := int64(0)
@@ -457,6 +468,10 @@ func WriteSummaryFileWithBlocks(indexPath string, summaryPath string, samplingRa
 	return nil
 }
 
+// nalazi nalbliži offset u summary fajlu,
+// koji je manji ili jednak od targetKey
+// vraća offset i true ako je pronađen, inače -1 i false
+// sve ovo radi sekvencijalno, direktno čitajući summary fajl
 func FindClosestIndexOffset(summaryPath, targetKey string) (int64, bool) {
 	file, err := os.Open(summaryPath)
 	if err != nil {
@@ -503,6 +518,9 @@ func FindClosestIndexOffset(summaryPath, targetKey string) (int64, bool) {
 
 }
 
+// nalazi nalbliži offset u summary fajlu
+// koji je manji ili jednak od targetKey
+// ali koristi BlockManager za čitanje
 func FindClosestIndexOffsetWithBlocks(bm *blockmanager.BlockManager, summaryPath string, targetKey string) (int64, bool) {
 	blockNum := int64(0)
 	var bestMatchOffset int64 = -1
@@ -539,6 +557,8 @@ func FindClosestIndexOffsetWithBlocks(bm *blockmanager.BlockManager, summaryPath
 	return bestMatchOffset, true
 }
 
+// kombinuje vise SSTable fajlova u jedan SSTable fajl
+// stare fajlove brise, kao i sve prethodno logicki obrisane zapise unutar njih
 func CompactSSTables(sstableDir string, bm *blockmanager.BlockManager) error {
 	files, err := os.ReadDir(sstableDir)
 	if err != nil {
@@ -612,6 +632,7 @@ func CompactSSTables(sstableDir string, bm *blockmanager.BlockManager) error {
 	return nil
 }
 
+// cita zapis na datoj poziciji bloka u data fajlu
 func ReadDataEntryAtBlock(bm *blockmanager.BlockManager, path string, blockNum int64) (Entry, error) {
 	blockID := blockmanager.BlockID{Path: path, Num: blockNum}
 	data, err := bm.ReadBlock(blockID)
@@ -636,6 +657,7 @@ func ReadDataEntryAtBlock(bm *blockmanager.BlockManager, path string, blockNum i
 	}, nil
 }
 
+// upisuje sve fajlove u sstable direktorijum
 func WriteAllFilesWithBlocks(dirPath string, entries []Entry, bm *blockmanager.BlockManager) error {
 	dataPath := filepath.Join(dirPath, "data")
 	err := WriteDataFileWithBlocks(entries, dataPath, bm)
@@ -802,6 +824,7 @@ func LoadMeta(path string) (int64, error) {
 	return int64(binary.LittleEndian.Uint64(data)), nil
 }
 
+// proverava da li je Merkle stablo validno, tj da li je neki od zapisa promenjen
 func ValidateMerkleTree(dirPath string, bm *blockmanager.BlockManager) (bool, error) {
 	dataPath := filepath.Join(dirPath, "data")
 	metaPath := filepath.Join(dirPath, "meta")
